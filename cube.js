@@ -32,7 +32,8 @@ function init_cube( gl )
 {
     var shaders = get_cube_shaders();
     var prog = createProgram( gl, shaders.vert, shaders.frag );
-//    var lb
+    shaders = get_light_shaders();
+    var lt_prog = createProgram( gl, shaders.vert, shaders.frag );
 
     var cube = 
     {
@@ -47,7 +48,13 @@ function init_cube( gl )
             u_light_pos:    set_svar( gl, "u_light_pos",    prog ),
             u_normal_xform: set_svar( gl, "u_normal_xform", prog )
         },
-        light_prog: 
+        light_prog: lt_prog,
+        light_svars: {
+            u_xform:        set_svar( gl, "u_xform",        lt_prog ),
+            u_view:         set_svar( gl, "u_view",         lt_prog ),
+            u_perspective:  set_svar( gl, "u_perspective",  lt_prog ),
+            u_color:        set_svar( gl, "u_color",        lt_prog )
+        },
         indicies: new Uint8Array
             ([
              // front
@@ -76,61 +83,90 @@ function init_cube( gl )
          */
         render: function( gl, xform, view, proj, wf, diffuse, nform, light )
         {
-            gl.useProgram(this.program);
-
-            gl.uniformMatrix4fv(this.svars.u_xform,       false, xform.elements);
-            gl.uniformMatrix4fv(this.svars.u_view,        false,  view.elements);
-            gl.uniformMatrix4fv(this.svars.u_perspective, false,  proj.elements);
-            gl.uniformMatrix4fv(this.svars.u_normal_xform,false, nform.elements);
             if( light )
-            { 
+            {
+                gl.useProgram(this.program);
+
+                gl.uniformMatrix4fv(this.svars.u_xform,       false, xform.elements);
+                gl.uniformMatrix4fv(this.svars.u_view,        false,  view.elements);
+                gl.uniformMatrix4fv(this.svars.u_perspective, false,  proj.elements);
+                gl.uniformMatrix4fv(this.svars.u_normal_xform,false, nform.elements);
+
                 gl.uniform3fv(this.svars.u_ambient,     AMBIENT );
                 gl.uniform3fv(this.svars.u_light_color, diffuse.color );
+                gl.uniform3fv(this.svars.u_light_pos,   diffuse.pos   );
+
+                gl.bindBuffer( gl.ARRAY_BUFFER, this.vertex_buffer );
+                gl.vertexAttribPointer( 
+                        this.svars.a_pos,
+                        3,
+                        gl.FLOAT,
+                        false,
+                        0, 0 );
+                gl.bindBuffer( gl.ARRAY_BUFFER, this.color_buffer );
+                gl.vertexAttribPointer(
+                        this.svars.a_color,
+                        3,
+                        gl.FLOAT,
+                        false,
+                        0, 0 );
+                gl.bindBuffer( gl.ARRAY_BUFFER, this.normal_buffer );
+                gl.vertexAttribPointer(
+                        this.svars.a_normal,
+                        3,
+                        gl.FLOAT,
+                        false,
+                        0, 0 );
+
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.i_buffer );
+                if( !wf )
+                    gl.drawElements(gl.TRIANGLES, this.indicies.length, gl.UNSIGNED_BYTE, 0);
+                else
+                    gl.drawElements(gl.LINE_LOOP, this.indicies.length, gl.UNSIGNED_BYTE, 0);
             }
             else
             {
-                gl.uniform1i( this.svars.u_light, false, 0 );
-                gl.uniform3fv(this.svars.u_ambient,     [1.0, 1.0, 1.0] );
-                gl.uniform3fv(this.svars.u_light_color, [5.0, 5.0, 5.0] );
+                gl.useProgram( this.light_prog );
+
+                gl.uniformMatrix4fv(
+                        this.light_svars.u_xform,
+                        false,
+                        xform.elements );
+                gl.uniformMatrix4fv(
+                        this.svars.u_view,
+                        false,
+                        view.elements );
+                gl.uniformMatrix4fv(
+                        this.light_svars.u_perspective,
+                        false,
+                        proj.elements );
+                gl.uniformMatrix4fv(
+                        this.light_svars.u_color,
+                        false,
+                        diffuse.color );
+
+                gl.bindBuffer( gl.ARRAY_BUFFER, this.vertex_buffer );
+                gl.vertexAttribPointer(
+                        this.light_svars.a_pos,
+                        3,
+                        gl.FLOAT,
+                        false,
+                        0, 0 );
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.i_buffer );
+                if( !wf )
+                    gl.drawElements(gl.TRIANGLES, this.indicies.length, gl.UNSIGNED_BYTE, 0);
+                else
+                    gl.drawElements(gl.LINE_LOOP, this.indicies.length, gl.UNSIGNED_BYTE, 0);
             }
-
-            gl.uniform3fv(this.svars.u_light_color, diffuse.color );
-            gl.uniform3fv(this.svars.u_light_pos,   diffuse.pos   );
-
-            gl.bindBuffer( gl.ARRAY_BUFFER, this.vertex_buffer );
-            gl.vertexAttribPointer( 
-                    this.svars.a_pos,
-                    3,
-                    gl.FLOAT,
-                    false,
-                    0, 0 );
-            gl.bindBuffer( gl.ARRAY_BUFFER, this.color_buffer );
-            gl.vertexAttribPointer(
-                    this.svars.a_color,
-                    3,
-                    gl.FLOAT,
-                    false,
-                    0, 0 );
-            gl.bindBuffer( gl.ARRAY_BUFFER, this.normal_buffer );
-            gl.vertexAttribPointer(
-                    this.svars.a_normal,
-                    3,
-                    gl.FLOAT,
-                    false,
-                    0, 0 );
-
-
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.i_buffer );
-            if( !wf )
-                gl.drawElements(gl.TRIANGLES, this.indicies.length, gl.UNSIGNED_BYTE, 0);
-            else
-                gl.drawElements(gl.LINE_LOOP, this.indicies.length, gl.UNSIGNED_BYTE, 0);
         },
         //Create buffer object
         i_buffer:           gl.createBuffer(),
         vertex_buffer:      gl.createBuffer(),
         color_buffer:       gl.createBuffer(),
         normal_buffer:      gl.createBuffer(),
+        lpv_buffer:         gl.createBuffer()
     }
     if( !cube.i_buffer )
         throw "Could not create cube index buffer.";
@@ -138,6 +174,10 @@ function init_cube( gl )
         throw "Could not create cube vertex buffer.";
     if( !cube.color_buffer )
         throw "Could not create cube color buffer.";
+    if( !cube.normal_buffer )
+        throw "Could not create cube normal buffer.";
+    if( !cube.lpv_buffer )
+        throw "Could not create vertex buffer for light objects.";
 
     var verticies = new Float32Array
         ([
@@ -153,7 +193,7 @@ function init_cube( gl )
          -0.5,-0.5,-0.5,   0.5,-0.5,-0.5,   0.5,-0.5, 0.5,  -0.5,-0.5, 0.5, 
          // v4-v7-v6-v5 back
          0.5,-0.5,-0.5,  -0.5,-0.5,-0.5,  -0.5, 0.5,-0.5,   0.5, 0.5,-0.5   
-         ]);
+        ]);
     var colors = new Float32Array
         ([
          // v0-v1-v2-v3 front(blue)
@@ -195,7 +235,7 @@ function init_cube( gl )
             -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  // v1-v6-v7-v2 left
             0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,  // v7-v4-v3-v2 down
             0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0   // v4-v7-v6-v5 back
-            ]);
+    ]);
 
     cube.svars.a_pos   = create_array_buffer( 
             gl, 
@@ -222,8 +262,21 @@ function init_cube( gl )
             prog,
             cube.normal_buffer );
 
+    gl.useProgram( prog );
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.i_buffer );
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cube.indicies, gl.STATIC_DRAW );
+
+    cube.light_svars.a_pos = create_array_buffer(
+            gl, 
+            normals,
+            3,
+            gl.FLOAT,
+            "a_pos",
+            lt_prog,
+            cube.lpv_buffer );
+    gl.useProgram( lt_prog );
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.i_buffer );
+    gl.bufferData(gl.ELEMENT_ATTAY_BUFFER, cube.indicies, gl.STATIC_DRAW );
 
     return cube;
 }

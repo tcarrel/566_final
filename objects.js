@@ -25,7 +25,7 @@ function get_scene(shape)
                  0,   0,   0, //Initial rotation about the local origin.
                 shape,        //The actual shape data.
                 "cube",
-                true );     //A unique id or name for this piece of this shape.
+                false);     //A unique id or name for this piece of this shape.
 
     var light = world_obj(
             1/4, 1/4, 1/4,
