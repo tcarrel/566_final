@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Windmill...</title>
+
+<!-- Use CSS to stretch the canvas to fill the browser window                -->
+<!-- This bit of CSS is from webglfundamentals.org                           -->
+<style>
+html, body {
+    margin:      0px;
+    width:      100%;
+    height:     100%;
+    overflow: hidden;
+}
+canvas {
+    width:  100%;
+    height: 100%;
+}
+</style>
+
+
+</head>
+
+<body style="background-color:#000000" onload="main()">
+<center>
+    <canvas
+        id="render_to"
+        width="640"
+        height="480">
+        Please use a browser that supports "canvas."
+    </canvas>
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"> </script>
+    <script src="../lib/cuon-matrix.js"></script>
+
+    <script src="./shaders.js"></script>
+    <script src="./shader_common.js"></script>
+    <script src="./camera.js"></script>
+    <script src="./terrain.js"></script>
+    <script src="./cube.js"></script>
+    <script src="./objects.js"></script>
+    <script src="./World.js"></script>
+
+</center>
+</body>
+</html>
