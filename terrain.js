@@ -40,9 +40,9 @@ function init_terrain( gl, T, image )
             quad[3][0], 0, quad[3][1],  0.0, 20.0, 0.0, 1.0, 0.0,
             quad[0][0], 0, quad[0][1],  0.0,  0.0, 0.0, 1.0, 0.0,
             quad[2][0], 0, quad[2][1], 20.0,  0.0, 0.0, 1.0, 0.0,
-            quad[1][0], 0, quad[1][1], 20.0, 20.0, 0.0, 1.0, 0.0,
-    ] 
-    );
+            quad[1][0], 0, quad[1][1], 20.0, 20.0, 0.0, 1.0, 0.0
+            ] 
+            );
     T.ppv = 8; //Points Per Vertex
 
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
@@ -60,7 +60,7 @@ function init_terrain( gl, T, image )
             gl.UNSIGNED_BYTE,
             image );
     gl.generateMipmap(gl.TEXTURE_2D);
-    console.log("Terrain texture, loaded.");
+    console.log("@@ SUCCESS: Terrain texture, loaded.");
 
     //Load verticies.
     if( !T.buffer )
@@ -70,11 +70,11 @@ function init_terrain( gl, T, image )
 
     if( !T.buffer )
     {
-        console.log("Failed to create terrain buffer.");
+        console.log(">>>>> Failed to create terrain buffer.");
     }
     else
     {
-        console.log("Terrain buffer was created successfully.");
+        console.log("@@ SUCCESS: Terrain buffer was created.");
     }
 
     var FSIZE = T.shape.BYTES_PER_ELEMENT;

@@ -12,43 +12,29 @@ function get_scene(shape)
             0, 0, 0,
             0, 0, 0,
             null,
-            "root",
-            true );
+            "root" );
 
     ///////////////////
     //  Make the cube.
     //  -- Note that the base cube is 1x1x1 with its origin centered.
     var cube = world_obj( 
-                 1,   1,   1, //Scale.
+                 2,   2,   2, //Scale.
                  0, 1/2,  10, //Origin.
                 10,   0,  10, //Initial translation.
                  0,   0,   0, //Initial rotation about the local origin.
                 shape,        //The actual shape data.
-                "cube",
-                false);     //A unique id or name for this piece of this shape.
-
-    var light = world_obj(
-            1/4, 1/4, 1/4,
-            0,   0,   0,
-            8.0, 3.0, 8.0,
-            45,  45,  45,
-            shape,
-            "light",
-            false );
-    light.set_parent( objects );
-
+                "cube" );     //A unique id or name for this piece of this shape.
+    
     ///////////////////
     // Make the table.
     //   location is randomized...
     var table = world_obj(
             1,   1,   1,
             0,   1/2, 0, //Set origin to bottom of the feet of table.
-            //            Math.random() * 50,   0, Math.random() * 50,
-            7.3, 0, 6.2,
+            Math.random() * 50,   0, Math.random() * 50,
             0,   (Math.random() * 360), 0,
             null,
-            "table",
-            true );
+            "table" );
 
     var leg1 = world_obj(
             1/8,   1,    1/8,
@@ -56,8 +42,7 @@ function get_scene(shape)
             31/64, 0,    31/64,
             0,     270,  0,
             shape,
-            "leg_1",
-            true
+            "leg_1"
             );
     var leg2 = world_obj(
             1/8,    1,   1/8,
@@ -65,8 +50,7 @@ function get_scene(shape)
             -31/64, 0,   31/64,
             0,      180, 0,
             shape,
-            "leg_2",
-            true
+            "leg_2"
             );
     var leg3 = world_obj(
             1/8,    1,  1/8,
@@ -74,8 +58,7 @@ function get_scene(shape)
             -31/64, 0, -31/64,
             0,      90, 0,
             shape,
-            "leg_3",
-            true
+            "leg_3"
             );
     var leg4 = world_obj(
             1/8, 1,  1/8,
@@ -83,8 +66,7 @@ function get_scene(shape)
             31/64, 0, -31/64,
             0,     0,  0,
             shape,
-            "leg_4",
-            true
+            "leg_4"
             );
     var top_ = world_obj(
             9/8, 1/32, 9/8,
@@ -92,8 +74,7 @@ function get_scene(shape)
             0, 1/2,   0,
             180,      0,   0,
             shape,
-            "top",
-            true
+            "top"
             );
     leg1.set_parent( table );
     leg2.set_parent( table );
@@ -109,8 +90,7 @@ function get_scene(shape)
             0,     0,    0,
             0,        0,    0,
             shape,
-            "windmill",
-            true
+            "windmill"
             );
 
     var blades = world_obj(
@@ -119,18 +99,15 @@ function get_scene(shape)
             0, 1/2, 0,
             0, 0, 0,
             null,
-            "blades",
-            true
+            "blades"
             );
 
     var blades_ = [];
     //Get the number of fan blades from the user.
-    var b_qty = 17;
-        /*Math.floor(Number(window.prompt(
-                    "Number of blades?\n" +
-                    "  Less than 30 is recommended.\n"+
-                    "  Press [?]/[/] for command listing.", "5")));
-                    */
+    var b_qty = Math.floor(Number(window.prompt(
+                "Number of blades?\n" +
+                "  Less than 30 is recommended.\n"+
+                "  Press [?]/[/] for command listing.", "5")));
     if( !b_qty || b_qty == 0 )
         b_qty = 1 + Math.floor( Math.random() * 20 );
     for( var ii = 0; ii < 360; ii += (360 / b_qty) )
@@ -140,8 +117,7 @@ function get_scene(shape)
                     0,    0,    0,
                     7.5,  210,  ii,
                     shape,
-                    "blade_" + ii,
-                    true
+                    "blade_" + ii
                     ));    
     for( var i = 0; i < blades_.length; i++ ) 
         blades_[i].set_parent(blades);
@@ -156,17 +132,15 @@ function get_scene(shape)
 
 
 /** Creates a single node of the scene graph.
-*/
+ */
 function world_obj( 
         xs, ys, zs, //Scale.
         xo, yo, zo, //Origin.
         xp, yp, zp, //Initial translation.
         xr, yr, zr, //Initial rotation about the local origin.
         verts,      //The actual shape data.
-        id,         //A unique id or name for this piece of this shape.
-        light_ )
+        id )        //A unique id or name for this piece of this shape.
 {
-
     var obj = 
     {
         name:           id,
@@ -177,11 +151,9 @@ function world_obj(
         origin:         new Matrix4, //The local origin
         world_matrix:   new Matrix4,
         local_matrix:   new Matrix4,
-        normal_matrix:  new Matrix4,
         shape:          verts,
         parent_:        null,
         dirty:          true, // dirty bit
-        light:          light_,
         children:       [],
         /** Wraps the rotate methods of the Matrix4 class and forces them to
          * update in the proper order so that each rotation is independant of
@@ -213,7 +185,7 @@ function world_obj(
             this.set_dirty();
         },
         /** Translates the local translation matrix.
-        */
+         */
         translate:      function( x, y, z )
         {
             this.pos.translate( x, y, z );
@@ -236,14 +208,9 @@ function world_obj(
             { 
                 this.local_matrix.concat( this.pos );
                 this.local_matrix.concat( this.local_rot );
-
-                this.normal_matrix.set( this.local_matrix );
                 this.local_matrix.concat( this.scl );
-                this.normal_matrix.concat( this.scl );
                 this.local_matrix.concat( this.rot );
-                this.normal_matrix.concat( this.rot );
                 this.local_matrix.concat( this.origin );
-                this.normal_matrix.concat( this.origin );
                 if(p_world)
                 {
                     this.local_matrix.set( this.pos );
@@ -252,18 +219,12 @@ function world_obj(
                     this.local_matrix.concat( this.rot );
                     this.local_matrix.concat( this.origin );
 
+
                     this.world_matrix.set( p_world );
                     this.world_matrix.concat( this.local_matrix );
                 }
                 else
                     this.world_matrix.set( this.local_matrix );
-
-                this.normal_matrix.concat( this.world_matrix );
-                this.normal_matrix.invert();
-                /*
-                   this.normal_matrix.set( this.world_matrix );
-                   this.normal_matrix.invert();
-                   */
             }
 
             /// Recursively update all children in graph.
@@ -288,23 +249,14 @@ function world_obj(
          * @param proj,  The projection matrix.
          * @param wf, Whether or not the shape should be drawn as a wireframe.
          */
-        render:         function( gl, view, proj, wf, diffuse )
+        render:         function( gl, view, proj, wf )
         {
             for( var ii = 0; ii < this.children.length; ii++ )
-                this.children[ii].render(gl, view, proj, wf, diffuse );
+                this.children[ii].render(gl, view, proj, wf );
 
-            //Objects FURTHEST away are drawn first! Z-buffering works! (Of course.)
             if( this.shape )
             {
-                this.shape.render( 
-                        gl,
-                        this.world_matrix,
-                        view,
-                        proj,
-                        wf,
-                        diffuse,
-                        this.normal_matrix,
-                        this.light );
+                this.shape.render( gl, this.world_matrix, view, proj, wf );
             }
         },
         /** Gets a reference to a specific entry in the tree using the name of

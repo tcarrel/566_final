@@ -150,6 +150,7 @@ function main()
         init_terrain( gl, terrain, t_texture );
     };
     terrain.render = get_rf();
+
     // Image from: 
     //http://www.art.eonworks.com/free/textures/floor_tiles_texture_005.png
     t_texture.src = "./resources/floor_tiles.png";
@@ -173,7 +174,7 @@ function main()
             scene_graph.update_world( false );
         }
 
-        scene_graph.render( gl, camera.view, camera.proj, keys.code & WIREFRAME, diffuse ); 
+        scene_graph.render( gl, camera.view, camera.proj, keys.code & WIREFRAME ); 
 
         //Render "Terrain" last to show depth buffer functioning.
         terrain.render( gl, camera.view, camera.proj, keys.code & WIREFRAME, diffuse );

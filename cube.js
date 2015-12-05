@@ -1,59 +1,44 @@
 
-
 /*
-const COLOR =
-[ 
-    [1.0, 0.0, 0.0],
-    [1.0, 0.0, 0.0],
-    [1.0, 0.0, 0.0],
-    [1.0, 0.0, 0.0],
-    [1.0, 0.0, 0.0],
-    [1.0, 0.0, 0.0]
-    ];
-*/
+   const COLOR =
+   [ 
+   [1.0, 0.0, 0.0],
+   [1.0, 0.0, 0.0],
+   [1.0, 0.0, 0.0],
+   [1.0, 0.0, 0.0],
+   [1.0, 0.0, 0.0],
+   [1.0, 0.0, 0.0]
+   ];
+   */
 const COLOR =
 [
-    [0.4, 0.4, 1.0], //0    Blue
+[0.4, 0.4, 1.0], //0    Blue
     [0.4, 1.0, 0.4], //1    Green
     [1.0, 0.4, 0.4], //2    Red
     [1.0, 1.0, 0.4], //3    Yellow
     [1.0, 1.0, 1.0], //4    White
     [0.4, 1.0, 1.0]  //5    Cyan
-];
+    ];
 
-/** Generates and returns a single instance of an indexed cube, the coodinates
- * are from an example from the course textbook, but scaled to generate a base
- * cube whose dimensions measure 1x1x1 unit located with the origin at its
- * centroid.
- *
- * @param The monolithic WebGL object.
- */
+    /** Generates and returns a single instance of an indexed cube, the coodinates
+     * are from an example from the course textbook, but scaled to generate a base
+     * cube whose dimensions measure 1x1x1 unit located with the origin at its
+     * centroid.
+     *
+     * @param The monolithic WebGL object.
+     */
 function init_cube( gl )
 {
     var shaders = get_cube_shaders();
     var prog = createProgram( gl, shaders.vert, shaders.frag );
-    shaders = get_light_shaders();
-    var lt_prog = createProgram( gl, shaders.vert, shaders.frag );
 
     var cube = 
     {
         program: prog,
         svars: {
-            u_xform:        set_svar( gl, "u_xform",        prog ),
-            u_view:         set_svar( gl, "u_view",         prog ),
-            u_perspective:  set_svar( gl, "u_perspective",  prog ),
-            //lighting
-            u_ambient:      set_svar( gl, "u_ambient",      prog ),
-            u_light_color:  set_svar( gl, "u_light_color",  prog ),
-            u_light_pos:    set_svar( gl, "u_light_pos",    prog ),
-            u_normal_xform: set_svar( gl, "u_normal_xform", prog )
-        },
-        light_prog: lt_prog,
-        light_svars: {
-            u_xform:        set_svar( gl, "u_xform",        lt_prog ),
-            u_view:         set_svar( gl, "u_view",         lt_prog ),
-            u_perspective:  set_svar( gl, "u_perspective",  lt_prog ),
-            u_color:        set_svar( gl, "u_color",        lt_prog )
+            u_xform:       set_svar( gl, "u_xform",       prog ),
+            u_view:        set_svar( gl, "u_view",        prog ),
+            u_perspective: set_svar( gl, "u_perspective", prog )
         },
         indicies: new Uint8Array
             ([
@@ -69,7 +54,7 @@ function init_cube( gl )
              16,17,18,  16,18,19,
              // back
              20,21,22,  20,22,23
-            ]),
+             ]),
         /**
          * Renders one instance of the cube.
          * @param gl, The monolithic WebGL object.
@@ -79,94 +64,40 @@ function init_cube( gl )
          * @param proj, The projection matrix.
          * @param wf,   bool, if, or not, the cube should be rendered as a
          * wireframe.
-         * @param diffuse, the diffuse light object.
          */
-        render: function( gl, xform, view, proj, wf, diffuse, nform, light )
+        render: function(gl, xform, view, proj, wf )
         {
-            if( light )
-            {
-                gl.useProgram(this.program);
+            gl.useProgram(this.program);
 
-                gl.uniformMatrix4fv(this.svars.u_xform,       false, xform.elements);
-                gl.uniformMatrix4fv(this.svars.u_view,        false,  view.elements);
-                gl.uniformMatrix4fv(this.svars.u_perspective, false,  proj.elements);
-                gl.uniformMatrix4fv(this.svars.u_normal_xform,false, nform.elements);
+            gl.uniformMatrix4fv(this.svars.u_xform,       false, xform.elements);
+            gl.uniformMatrix4fv(this.svars.u_view,        false,  view.elements);
+            gl.uniformMatrix4fv(this.svars.u_perspective, false,  proj.elements);
 
-                gl.uniform3fv(this.svars.u_ambient,     AMBIENT );
-                gl.uniform3fv(this.svars.u_light_color, diffuse.color );
-                gl.uniform3fv(this.svars.u_light_pos,   diffuse.pos   );
+            gl.bindBuffer( gl.ARRAY_BUFFER, this.vertex_buffer );
+            gl.vertexAttribPointer( 
+                    this.svars.a_pos,
+                    3,
+                    gl.FLOAT,
+                    false,
+                    0, 0 );
+            gl.bindBuffer( gl.ARRAY_BUFFER, this.color_buffer );
+            gl.vertexAttribPointer(
+                    this.svars.a_color,
+                    3,
+                    gl.FLOAT,
+                    false,
+                    0, 0 );
 
-                gl.bindBuffer( gl.ARRAY_BUFFER, this.vertex_buffer );
-                gl.vertexAttribPointer( 
-                        this.svars.a_pos,
-                        3,
-                        gl.FLOAT,
-                        false,
-                        0, 0 );
-                gl.bindBuffer( gl.ARRAY_BUFFER, this.color_buffer );
-                gl.vertexAttribPointer(
-                        this.svars.a_color,
-                        3,
-                        gl.FLOAT,
-                        false,
-                        0, 0 );
-                gl.bindBuffer( gl.ARRAY_BUFFER, this.normal_buffer );
-                gl.vertexAttribPointer(
-                        this.svars.a_normal,
-                        3,
-                        gl.FLOAT,
-                        false,
-                        0, 0 );
-
-
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.i_buffer );
-                if( !wf )
-                    gl.drawElements(gl.TRIANGLES, this.indicies.length, gl.UNSIGNED_BYTE, 0);
-                else
-                    gl.drawElements(gl.LINE_LOOP, this.indicies.length, gl.UNSIGNED_BYTE, 0);
-            }
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.i_buffer );
+            if( !wf )
+                gl.drawElements(gl.TRIANGLES, this.indicies.length, gl.UNSIGNED_BYTE, 0);
             else
-            {
-                gl.useProgram( this.light_prog );
-
-                gl.uniformMatrix4fv(
-                        this.light_svars.u_xform,
-                        false,
-                        xform.elements );
-                gl.uniformMatrix4fv(
-                        this.svars.u_view,
-                        false,
-                        view.elements );
-                gl.uniformMatrix4fv(
-                        this.light_svars.u_perspective,
-                        false,
-                        proj.elements );
-                gl.uniformMatrix4fv(
-                        this.light_svars.u_color,
-                        false,
-                        diffuse.color );
-
-                gl.bindBuffer( gl.ARRAY_BUFFER, this.vertex_buffer );
-                gl.vertexAttribPointer(
-                        this.light_svars.a_pos,
-                        3,
-                        gl.FLOAT,
-                        false,
-                        0, 0 );
-
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.i_buffer );
-                if( !wf )
-                    gl.drawElements(gl.TRIANGLES, this.indicies.length, gl.UNSIGNED_BYTE, 0);
-                else
-                    gl.drawElements(gl.LINE_LOOP, this.indicies.length, gl.UNSIGNED_BYTE, 0);
-            }
+                gl.drawElements(gl.LINE_LOOP, this.indicies.length, gl.UNSIGNED_BYTE, 0);
         },
         //Create buffer object
-        i_buffer:           gl.createBuffer(),
-        vertex_buffer:      gl.createBuffer(),
-        color_buffer:       gl.createBuffer(),
-        normal_buffer:      gl.createBuffer(),
-        lpv_buffer:         gl.createBuffer()
+        i_buffer:       gl.createBuffer(),
+        vertex_buffer:  gl.createBuffer(),
+        color_buffer:   gl.createBuffer()
     }
     if( !cube.i_buffer )
         throw "Could not create cube index buffer.";
@@ -174,10 +105,7 @@ function init_cube( gl )
         throw "Could not create cube vertex buffer.";
     if( !cube.color_buffer )
         throw "Could not create cube color buffer.";
-    if( !cube.normal_buffer )
-        throw "Could not create cube normal buffer.";
-    if( !cube.lpv_buffer )
-        throw "Could not create vertex buffer for light objects.";
+
 
     var verticies = new Float32Array
         ([
@@ -193,7 +121,7 @@ function init_cube( gl )
          -0.5,-0.5,-0.5,   0.5,-0.5,-0.5,   0.5,-0.5, 0.5,  -0.5,-0.5, 0.5, 
          // v4-v7-v6-v5 back
          0.5,-0.5,-0.5,  -0.5,-0.5,-0.5,  -0.5, 0.5,-0.5,   0.5, 0.5,-0.5   
-        ]);
+         ]);
     var colors = new Float32Array
         ([
          // v0-v1-v2-v3 front(blue)
@@ -225,17 +153,8 @@ function init_cube( gl )
          COLOR[5][0], COLOR[5][1], COLOR[5][2],
          COLOR[5][0], COLOR[5][1], COLOR[5][2],
          COLOR[5][0], COLOR[5][1], COLOR[5][2],
-         COLOR[5][0], COLOR[5][1], COLOR[5][2],
-         ]);
-
-    var normals = new Float32Array([
-            0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
-            1.0, 0.0, 0.0,   1.0, 0.0, 0.0,   1.0, 0.0, 0.0,   1.0, 0.0, 0.0,  // v0-v3-v4-v5 right
-            0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,  // v0-v5-v6-v1 up
-            -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  // v1-v6-v7-v2 left
-            0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,  // v7-v4-v3-v2 down
-            0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0   // v4-v7-v6-v5 back
-    ]);
+         COLOR[5][0], COLOR[5][1], COLOR[5][2]
+             ]);
 
     cube.svars.a_pos   = create_array_buffer( 
             gl, 
@@ -243,7 +162,7 @@ function init_cube( gl )
             3,
             gl.FLOAT,
             "a_pos",
-            prog,
+            cube.program,
             cube.vertex_buffer );
     cube.svars.a_color = create_array_buffer(
             gl,
@@ -251,32 +170,12 @@ function init_cube( gl )
             3,
             gl.FLOAT,
             "a_color",
-            prog,
+            cube.program,
             cube.color_buffer );
-    cube.svars.a_normal = create_array_buffer(
-            gl,
-            normals,
-            3,
-            gl.FLOAT,
-            "a_normal",
-            prog,
-            cube.normal_buffer );
 
-    gl.useProgram( prog );
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.i_buffer );
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cube.indicies, gl.STATIC_DRAW );
-
-    cube.light_svars.a_pos = create_array_buffer(
-            gl, 
-            normals,
-            3,
-            gl.FLOAT,
-            "a_pos",
-            lt_prog,
-            cube.lpv_buffer );
-    gl.useProgram( lt_prog );
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.i_buffer );
-    gl.bufferData(gl.ELEMENT_ATTAY_BUFFER, cube.indicies, gl.STATIC_DRAW );
+    gl.useProgram( cube.program );
+    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, cube.i_buffer );
+    gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, cube.indicies, gl.STATIC_DRAW );
 
     return cube;
 }
@@ -302,7 +201,7 @@ function create_array_buffer( gl, data, qty, type, attrib, prog, buffer )
 
     if( !buffer )
     {
-        console.log(" Couldn't create VBO for " + attrib );
+        console.log(">>>>> Couldn't create VBO for " + attrib );
     }
     else
         console.log("@@ SUCCESS: VBO for '" + attrib + ",' created." );
@@ -313,7 +212,7 @@ function create_array_buffer( gl, data, qty, type, attrib, prog, buffer )
     var assign = gl.getAttribLocation( prog, attrib );
     if( assign < 0 )
     {
-        console.log( " Failed to get location of " + attrib );
+        console.log( ">>>>> Failed to get location of " + attrib );
     }
     else
         console.log( "@@ SUCCESS: location of '" + attrib + ",' acquired." );
