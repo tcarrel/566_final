@@ -58,7 +58,7 @@ function get_terrain_shaders()
     };
 }
 
-/*
+
 function get_cube_shaders()
 {
     return{
@@ -72,6 +72,7 @@ function get_cube_shaders()
             'uniform    mat4    u_normal_xform;\n' +
             'attribute  vec4    a_color;\n' +
             'attribute  vec4    a_normal;\n' +
+
             'varying    vec4    v_color;\n' +
             'varying    vec3    v_normal;\n' +
             'varying    vec3    v_pos;\n' +
@@ -84,6 +85,7 @@ function get_cube_shaders()
             '   v_pos       = vec3( u_xform * a_pos ).xyz;\n' +
             '   v_normal    = normalize( u_normal_xform * a_normal ).xyz;\n' +
             '}\n',
+
         frag:
             'precision  mediump     float;\n' +
 
@@ -108,64 +110,94 @@ function get_cube_shaders()
             '}\n'
     };
 }
-*/
 
-/*
-function get_terrain_shaders()
+function get_shadow_shaders()
 {
+    var maskval = 1.0/256.0;
     return {
         vert:
-            'attribute  vec4    a_pos;\n' +
-            'uniform    mat4    u_xform;\n' +
-            'uniform    mat4    u_view;\n' +
-            'uniform    mat4    u_perspective;\n' +
-            'attribute  vec2    a_tex_coord;\n' +
-            'varying    vec2    v_tex_coord;\n' +
-
+            'attribue   vec4    a_pos;\n' +
+            'uniform    mat4    u_mvp;\n' +
             'void main()\n' +
             '{\n' +
-            '    gl_Position = u_perspective * u_view * u_xform * a_pos;\n' +
-            '    v_tex_coord = a_tex_coord;\n' +
+            '   gl_Position = u_mvp * a_pos;\n' +
             '}\n',
         frag:
-            'precision  mediump     float;\n' +
-
-            'uniform    sampler2D   u_sampler;\n' +
-            'varying    vec2        v_tex_coord;\n' +
-
+            'precision mediump float;\n' +
             'void main()\n' +
             '{\n' +
-            '   gl_FragColor = texture2D(u_sampler, v_tex_coord);\n'+
+            '   const vec4 bits = vec4( ' + 1 + '.0, ' +
+            256 + '.0, ' +
+            256.0 * 256 + '.0, ' +
+            256.0 * 256.0 * 256 + '.0 );\n' +
+            '   const vec4 bitm = vec4( ' + maskval + ', ' +
+                                            maskval + ', ' +
+                                            maskval + ', 0.0 );\n' +
+            '   vec4 rgbadepth = fract( gl_FragCoord.z * bits );\n' +
+            '   rgbadepth -= rgbadepth.gbaa * bitm;\n' +
+            '   gl_FragColor = rgbadepth;\n' +
             '}\n'
-    };
+    }
+}
+
+/*
+   function get_terrain_shaders()
+   {
+   return {
+   vert:
+   'attribute  vec4    a_pos;\n' +
+   'uniform    mat4    u_xform;\n' +
+   'uniform    mat4    u_view;\n' +
+   'uniform    mat4    u_perspective;\n' +
+   'attribute  vec2    a_tex_coord;\n' +
+   'varying    vec2    v_tex_coord;\n' +
+
+   'void main()\n' +
+   '{\n' +
+   '    gl_Position = u_perspective * u_view * u_xform * a_pos;\n' +
+   '    v_tex_coord = a_tex_coord;\n' +
+   '}\n',
+   frag:
+   'precision  mediump     float;\n' +
+
+   'uniform    sampler2D   u_sampler;\n' +
+   'varying    vec2        v_tex_coord;\n' +
+
+   'void main()\n' +
+   '{\n' +
+   '   gl_FragColor = texture2D(u_sampler, v_tex_coord);\n'+
+   '}\n'
+   };
+   }
+
+/*
+function get_cube_shaders()
+{
+return{
+vert:
+'attribute  vec4    a_pos;\n' +
+'attribute  vec4    a_color;\n' +
+'uniform    mat4    u_xform;\n' +
+'uniform    mat4    u_view;\n' +
+'uniform    mat4    u_perspective;\n' +
+
+'varying    vec4    v_color;\n' +
+
+'void main()\n' +
+'{\n' +
+'    gl_Position = u_perspective * u_view * u_xform * a_pos;\n' +
+'    v_color = a_color;\n' +
+'}\n',
+frag:
+'precision  mediump     float;\n' +
+
+'varying    vec4        v_color;\n' +
+
+'void main()\n' +
+'{\n' +
+'   gl_FragColor = v_color;\n'+
+'}\n'
+};
 }
 */
 
-function get_cube_shaders()
-{
-    return{
-        vert:
-            'attribute  vec4    a_pos;\n' +
-            'attribute  vec4    a_color;\n' +
-            'uniform    mat4    u_xform;\n' +
-            'uniform    mat4    u_view;\n' +
-            'uniform    mat4    u_perspective;\n' +
-
-            'varying    vec4    v_color;\n' +
-
-            'void main()\n' +
-            '{\n' +
-            '    gl_Position = u_perspective * u_view * u_xform * a_pos;\n' +
-            '    v_color = a_color;\n' +
-            '}\n',
-        frag:
-            'precision  mediump     float;\n' +
-
-            'varying    vec4        v_color;\n' +
-
-            'void main()\n' +
-            '{\n' +
-            '   gl_FragColor = v_color;\n'+
-            '}\n'
-    };
-}

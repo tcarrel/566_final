@@ -113,10 +113,11 @@ function main()
     };
 
     var diffuse = {
-        color:  new Float32Array([ 1.0, 0.0, 0.0 ]),
+        color:  new Float32Array([ 5.0, 5.0, 5.0 ]),
         pos:    new Float32Array([ 8.0, 3.0, 8.0 ])
     };
 
+    get_lights( gl );
 
     var scene_graph = get_scene( init_cube(gl) );
     // Get references for the key-press response.
@@ -162,22 +163,27 @@ function main()
 
     gl.clearColor( 0.4, 0.4, 0.5, 1.0 );
 
+    var begin = Date.now();
+    var end   = Date.now();
     var tick = function()
     {
+
         gl.clear( gl.COLOR_BUFFER_BIT );
         //Render skybox here.
         gl.clear( gl.DEPTH_BUFFER_BIT );
 
+        begin = Date.now();
         if( keys.code !== 0 )
         {
             key_response( camera, keys );
             scene_graph.update_world( false );
         }
-
-        scene_graph.render( gl, camera.view, camera.proj, keys.code & WIREFRAME ); 
+        
+        var wf = keys.code & WIREFRAME;
+        scene_graph.render( gl, camera.view, camera.proj, wf, diffuse ); 
 
         //Render "Terrain" last to show depth buffer functioning.
-        terrain.render( gl, camera.view, camera.proj, keys.code & WIREFRAME, diffuse );
+        terrain.render( gl, camera.view, camera.proj, wf, diffuse );
 
         requestAnimationFrame( tick, canvas );
     };

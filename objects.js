@@ -24,6 +24,8 @@ function get_scene(shape)
                  0,   0,   0, //Initial rotation about the local origin.
                 shape,        //The actual shape data.
                 "cube" );     //A unique id or name for this piece of this shape.
+
+    
     
     ///////////////////
     // Make the table.
@@ -31,7 +33,8 @@ function get_scene(shape)
     var table = world_obj(
             1,   1,   1,
             0,   1/2, 0, //Set origin to bottom of the feet of table.
-            Math.random() * 50,   0, Math.random() * 50,
+//            Math.random() * 50,   0, Math.random() * 50,
+            2,   0,   0,
             0,   (Math.random() * 360), 0,
             null,
             "table" );
@@ -122,6 +125,15 @@ function get_scene(shape)
     for( var i = 0; i < blades_.length; i++ ) 
         blades_[i].set_parent(blades);
 
+    var light = world_obj(
+            1/6, 1/6, 1/6,
+            0, 0, 0,
+            8, 3, 8,
+            45, 45, 0,
+            shape,
+            "light" );
+
+    light.set_parent(objects );
     blades.set_parent(windmill);
     windmill.set_parent( table );
     table.set_parent( objects );
@@ -151,6 +163,7 @@ function world_obj(
         origin:         new Matrix4, //The local origin
         world_matrix:   new Matrix4,
         local_matrix:   new Matrix4,
+        norma_xform:    new Matrix4,
         shape:          verts,
         parent_:        null,
         dirty:          true, // dirty bit
@@ -249,14 +262,14 @@ function world_obj(
          * @param proj,  The projection matrix.
          * @param wf, Whether or not the shape should be drawn as a wireframe.
          */
-        render:         function( gl, view, proj, wf )
+        render:         function( gl, view, proj, wf, diffuse  )
         {
             for( var ii = 0; ii < this.children.length; ii++ )
-                this.children[ii].render(gl, view, proj, wf );
+                this.children[ii].render(gl, view, proj, wf, diffuse );
 
             if( this.shape )
             {
-                this.shape.render( gl, this.world_matrix, view, proj, wf );
+                this.shape.render( gl, this.world_matrix, view, proj, wf, diffuse );
             }
         },
         /** Gets a reference to a specific entry in the tree using the name of
