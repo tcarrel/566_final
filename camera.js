@@ -184,6 +184,29 @@ function get_camera(aspect, world_size)
 
         this.update_view();
     }
+    camera.strafe_right = function(distance)
+    {
+        var movement = pol_to_cart( this.angle + 90, I|K );
+        movement[0] *= distance;
+        movement[1] *= distance;
+        movement[2] *= distance;
+
+        this.check_bounds(movement);
+        this.x += movement[0];
+        this.z += movement[2];
+
+        this.translation.translate(
+                movement[0],
+                movement[1],
+                movement[2] );
+
+        this.update_view();
+    }
+    camera.strafe_left = function(distance)
+    {
+        distance = 0 - distance;
+        this.strafe_right(distance);
+    }
 
     camera.move_forward = function(distance)
     {

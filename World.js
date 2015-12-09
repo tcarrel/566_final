@@ -16,28 +16,31 @@ const CULL  = true;
 const DEPTH = true;
 
 //Standardized key codes:
-const UP            =  38;
-const DOWN          =  40;
-const LEFT          =  37;
-const RIGHT         =  39;
-const W_CODE        =  87;
-const Y_CODE        =  89;
-const TILDA_CODE    = 192;
-const SHFT_CODE     =  16;
-const E_CODE        =  69;
-const D_CODE        =  68;
-const SPACE_BAR     =  32;
-const HELP_CODE     = 191;
-const U_CODE        =  85;
-const H_CODE        =  72;
-const J_CODE        =  74;
-const B_CODE        =  66;
-const N_CODE        =  78;
-const G_CODE        =  71;
-const V_CODE        =  86;
+const FORWARDS      =  get_code('w');
+const BACKWARDS     =  get_code('s');
+const TURN_LEFT     =  get_code('left_arrow');
+const TURN_RIGHT    =  get_code('right_arrow');
+const FAN_ACTIVATE  =  get_code('x');//87;
+const FAN_CLOCKWISE =  get_code('e');
+const WF_TOGGLE     =  get_code('`');
+const MVMNT_SPEED   =  get_code('shift');
+const LOOK_UP       =  get_code('up_arrow');
+const LOOK_DOWN     =  get_code('down_arrow');
+const SPACE_BAR     =  get_code('space');
+const HELP_CODE     =  get_code('f1');;
+const FAN_ANTICWISE =  get_code('q');
+const TABLE_Y_C     =  get_code('c');
+const TABLE_Y_A     =  get_code('z');;
+const TABLE_X_C     =  get_code('num_8');
+const TABLE_X_A     =  get_code('num_2');
+const TABLE_Z_C     =  get_code('num_6');
+const TABLE_Z_A     =  get_code('num_4');
+const STRAFE_LEFT   =  get_code('a');
+const STRAFE_RIGHT  =  get_code('d');
+const TOGGLE_LIGHTS =  get_code('f');
 
 //binary key codes, as used for internal state.
-const DOWN_ARROW    = 1; //<< 0;
+const DOWN_ARROW    = 1;//<< 0;
 const UP_ARROW      = 1 <<  1;
 const RIGHT_ARROW   = 1 <<  2;
 const LEFT_ARROW    = 1 <<  3;
@@ -58,13 +61,25 @@ const G_KEY         = 1 << 17;
 const V_KEY         = 1 << 18;
 const WIREFRAME     = 1 << 19;
 const WINDMILL_ON   = 1 << 20;
+const S_LEFT        = 1 << 21;
+const S_RIGHT       = 1 << 22;
 
 //Adjust movement speeds:
 const ANGLE_INCREMENT       = 1.5;
-const POSITION_INCREMENT    = 0.1;
+const POSITION_INCREMENT    = 0.2;
 
 //Ambient light: (make not a const, later)
 const AMBIENT = [ 0.2, 0.2, 0.2 ];
+const DIFFUSE = 
+[{
+    color:      [ (240/255), 1.0, (180/255) ],
+    direction:  [ 0.5,-1.0, 0.5 ]
+},{
+    color:      [ 0.0, 0.0, 0.0 ],
+    direction:  [ 0.5,-1.0, 0.5 ]
+}];
+
+const MS_PER_FRAME = 100/6; //1000/60 == 60fps
 
 "use strict";
 
@@ -95,10 +110,19 @@ function main()
     }
     camera = get_camera(aspect, [50, 50]);
 
+    var point_light = {
+        color:  0,
+        pos:    new Float32Array([ 0.0, 4.0, 0.0 ]),
+        on:     new Float32Array([ 1.5, 1.5, 1.5 ]),
+        off:    new Float32Array([ 0.0, 0.0, 0.0 ]),
+        is_on: true
+    };
+    point_light.color = point_light.on;
+
     // Keypress handling.
     document.onkeydown = function(ev)
     {
-        handle_key_down( ev, keys );
+        handle_key_down( ev, keys, point_light );
     };
     document.onkeyup   = function(ev)
     {
@@ -112,14 +136,12 @@ function main()
         camera.update_projection(aspect);
     };
 
-    var diffuse = {
-        color:  new Float32Array([ 5.0, 5.0, 5.0 ]),
-        pos:    new Float32Array([ 8.0, 3.0, 8.0 ])
-    };
+    //get_lights( gl, point_light, canvas );
 
-    get_lights( gl );
+    //    var shadows = get_lights( gl, point_light, canvas );
+    var shadows = {};
 
-    var scene_graph = get_scene( init_cube(gl) );
+    var scene_graph = get_scene( init_cube( gl, shadows ) );
     // Get references for the key-press response.
     keys.windmill    = search_graph( "windmill",    scene_graph );
     keys.blades      = search_graph( "blades",      scene_graph );
@@ -163,27 +185,31 @@ function main()
 
     gl.clearColor( 0.4, 0.4, 0.5, 1.0 );
 
-    var begin = Date.now();
-    var end   = Date.now();
+    var current     = 0.0;
+    var previous    = Date.now();
+
     var tick = function()
     {
+        current = Date.now();
+        var elapsed = current - previous;
+        previous = current;
 
         gl.clear( gl.COLOR_BUFFER_BIT );
         //Render skybox here.
         gl.clear( gl.DEPTH_BUFFER_BIT );
 
-        begin = Date.now();
         if( keys.code !== 0 )
         {
-            key_response( camera, keys );
+            key_response( camera, keys, elapsed );
             scene_graph.update_world( false );
         }
-        
+
         var wf = keys.code & WIREFRAME;
-        scene_graph.render( gl, camera.view, camera.proj, wf, diffuse ); 
+        scene_graph.render( gl, camera.view, camera.proj, wf, point_light ); 
 
         //Render "Terrain" last to show depth buffer functioning.
-        terrain.render( gl, camera.view, camera.proj, wf, diffuse );
+        terrain.render( gl, camera.view, camera.proj, wf, point_light );
+        end = Date.now();
 
         requestAnimationFrame( tick, canvas );
     };
@@ -191,45 +217,48 @@ function main()
     tick();
 }
 
-function handle_key_down( e, keys )
+function handle_key_down( e, keys, point_light )
 {
     if( DEBUG )
         console.log( e.keyCode + " pressed." );
 
     switch( e.keyCode )
     {
-        case UP:
+        case FORWARDS:
             keys.code |= UP_ARROW;
             keys.code &= ~DOWN_ARROW;
             break;
-        case DOWN:
+        case BACKWARDS:
             keys.code |= DOWN_ARROW;
             keys.code &= ~UP_ARROW;
             break;
-        case LEFT: 
+        case TURN_LEFT: 
             keys.code |= LEFT_ARROW;
             keys.code &= ~RIGHT_ARROW;
             break;
-        case RIGHT:
+        case TURN_RIGHT:
             keys.code |= RIGHT_ARROW;
             keys.code &= ~LEFT_ARROW;
             break;
-        case W_CODE: //windmill on/off
+        case FAN_ACTIVATE:
             keys.code |= W_KEY;
             break;
-        case Y_CODE: //rotate windmill
+        case FAN_CLOCKWISE: //rotate windmill
             keys.code |= Y_KEY;
             break;
-        case TILDA_CODE: //toggle wireframe
+        case FAN_ANTICWISE:
+            keys.code |= U_KEY;
+            break;
+        case WF_TOGGLE: //toggle wireframe
             keys.code |= TILDA_KEY;
             break;
-        case SHFT_CODE: 
+        case MVMNT_SPEED:
             keys.code |= SHIFT;
             break;
-        case E_CODE:
+        case LOOK_UP:
             keys.code |= E_KEY;
             break;
-        case D_CODE:
+        case LOOK_DOWN:
             keys.code |= D_KEY;
             break;
         case SPACE_BAR:
@@ -238,26 +267,36 @@ function handle_key_down( e, keys )
         case HELP_CODE:
             keys.code |= HELP;
             break;
-        case U_CODE:
-            keys.code |= U_KEY;
-            break;
-        case H_CODE:
+        case TABLE_Y_C:
             keys.code |= H_KEY;
             break;
-        case J_CODE:
+        case TABLE_Y_A:
             keys.code |= J_KEY;
             break;
-        case B_CODE:
+        case TABLE_X_C:
             keys.code |= B_KEY;
             break;
-        case N_CODE:
+        case TABLE_X_A:
             keys.code |= N_KEY;
             break;
-        case G_CODE:
+        case TABLE_Z_C:
             keys.code |= G_KEY;
             break;
-        case V_CODE:
+        case TABLE_Z_A:
             keys.code |= V_KEY;
+            break;
+        case STRAFE_LEFT:
+            keys.code |= S_LEFT;
+            break;
+        case STRAFE_RIGHT:
+            keys.code |= S_RIGHT;
+            break;
+        case TOGGLE_LIGHTS:
+            point_light.is_on = !point_light.is_on;
+            if( point_light.is_on )
+                point_light.color = point_light.on;
+            else
+                point_light.color = point_light.off;
             break;
         default:
             return;
@@ -271,78 +310,91 @@ function handle_key_up( e, keys )
 
     switch( e.keyCode )
     {
-        case UP:
+        case FORWARDS:
             keys.code &= ~UP_ARROW;
             break;
-        case DOWN:
+        case BACKWARDS:
             keys.code &= ~DOWN_ARROW;
             break;
-        case LEFT:
+        case TURN_LEFT:
             keys.code &= ~LEFT_ARROW;
             break;
-        case RIGHT:
+        case TURN_RIGHT:
             keys.code &= ~RIGHT_ARROW;
             break;
-        case Y_CODE:
+        case FAN_CLOCKWISE:
             keys.code &= ~Y_KEY;
             break;
-        case SHFT_CODE:
+        case MVMNT_SPEED:
             keys.code &= ~SHIFT;
             break;
-        case E_CODE:
+        case LOOK_UP:
             keys.code &= ~E_KEY;
             break;
-        case D_CODE:
+        case LOOK_DOWN:
             keys.code &= ~D_KEY;
             break;
-        case U_CODE:
+        case FAN_ANTICWISE:
             keys.code &= ~U_KEY;
             break;
-        case H_CODE:
+        case TABLE_Y_C:
             keys.code &= ~H_KEY;
             break;
-        case J_CODE:
+        case TABLE_Y_A:
             keys.code &= ~J_KEY;
             break;
-        case B_CODE:
+        case TABLE_X_C:
             keys.code &= ~B_KEY;
             break;
-        case N_CODE:
+        case TABLE_X_A:
             keys.code &= ~N_KEY;
             break;
-        case G_CODE:
+        case TABLE_Z_C:
             keys.code &= ~G_KEY;
             break;
-        case V_CODE:
+        case TABLE_Z_A:
             keys.code &= ~V_KEY;
+            break;
+        case STRAFE_LEFT:
+            keys.code &= ~S_LEFT;
+            break;
+        case STRAFE_RIGHT:
+            keys.code &= ~S_RIGHT;
             break;
         default:
             return;
     }
 }
 
-function key_response( camera, key )
+function key_response( camera, key, time_step )
 {
-    var mov_dist;
+    var mov_dist    = time_step / MS_PER_FRAME;
+    var angle_inc   = mov_dist;
     if( key.code & SHIFT )
     {
-        mov_dist = POSITION_INCREMENT;
+        mov_dist  *= POSITION_INCREMENT * 1.75;
+        angle_inc *= ANGLE_INCREMENT * 1.75;
     }
     else
     {
-        mov_dist = POSITION_INCREMENT * 2;
+        mov_dist  *= POSITION_INCREMENT;
+        angle_inc *= ANGLE_INCREMENT;
     }
-
 
     if( key.code & UP_ARROW )
         camera.move_forward( mov_dist );
     else if( key.code & DOWN_ARROW )
         camera.move_backward( mov_dist );
 
+    if( key.code & S_LEFT )
+        camera.strafe_left( mov_dist );
+    else if( key.code & S_RIGHT )
+        camera.strafe_right( mov_dist );
+
     if( key.code & LEFT_ARROW )
-        camera.rotate_left_by( ANGLE_INCREMENT );
+        camera.rotate_left_by( angle_inc );
     else if( key.code & RIGHT_ARROW )
-        camera.rotate_right_by(ANGLE_INCREMENT );
+        camera.rotate_right_by( angle_inc );
 
     if( key.code & E_KEY )
         camera.look_up( ANGLE_INCREMENT );

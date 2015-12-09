@@ -18,12 +18,12 @@ function get_scene(shape)
     //  Make the cube.
     //  -- Note that the base cube is 1x1x1 with its origin centered.
     var cube = world_obj( 
-                 2,   2,   2, //Scale.
+                 1,   1,   1, //Scale.
                  0, 1/2,  10, //Origin.
-                10,   0,  10, //Initial translation.
-                 0,   0,   0, //Initial rotation about the local origin.
+                 5,   0,   5, //Initial translation.
+                 0,  60,   0, //Initial rotation about the local origin.
                 shape,        //The actual shape data.
-                "cube" );     //A unique id or name for this piece of this shape.
+                "cube" );     //A unique id for this piece of this shape.
 
     
     
@@ -34,7 +34,7 @@ function get_scene(shape)
             1,   1,   1,
             0,   1/2, 0, //Set origin to bottom of the feet of table.
 //            Math.random() * 50,   0, Math.random() * 50,
-            2,   0,   0,
+            3,   0,   3,
             0,   (Math.random() * 360), 0,
             null,
             "table" );
@@ -75,7 +75,7 @@ function get_scene(shape)
             9/8, 1/32, 9/8,
             0, -1/2,   0,
             0, 1/2,   0,
-            180,      0,   0,
+            180,      1,   0,
             shape,
             "top"
             );
@@ -128,13 +128,21 @@ function get_scene(shape)
     var light = world_obj(
             1/6, 1/6, 1/6,
             0, 0, 0,
-            8, 3, 8,
+            0, 4, 0,
             45, 45, 0,
             shape,
             "light" );
+    var light_u = world_obj(
+            1/6, 1/6, 1/6,
+            0, 0, 0,
+            0, 0, 0,
+            45, 45, 0,
+            shape,
+            "light_u" );
 
-    light.set_parent(objects );
-    blades.set_parent(windmill);
+    light.set_parent( objects );
+    light_u.set_parent( objects );
+    blades.set_parent( windmill );
     windmill.set_parent( table );
     table.set_parent( objects );
     cube.set_parent( objects );
@@ -164,6 +172,7 @@ function world_obj(
         world_matrix:   new Matrix4,
         local_matrix:   new Matrix4,
         norma_xform:    new Matrix4,
+//        shadow:         new Matrix4,
         shape:          verts,
         parent_:        null,
         dirty:          true, // dirty bit
@@ -232,7 +241,6 @@ function world_obj(
                     this.local_matrix.concat( this.rot );
                     this.local_matrix.concat( this.origin );
 
-
                     this.world_matrix.set( p_world );
                     this.world_matrix.concat( this.local_matrix );
                 }
@@ -262,16 +270,40 @@ function world_obj(
          * @param proj,  The projection matrix.
          * @param wf, Whether or not the shape should be drawn as a wireframe.
          */
-        render:         function( gl, view, proj, wf, diffuse  )
+        render: function( gl, view, proj, wf, point_light )
         {
             for( var ii = 0; ii < this.children.length; ii++ )
-                this.children[ii].render(gl, view, proj, wf, diffuse );
+                this.children[ii].render(gl, view, proj, wf, point_light );
+            
+            /*
+            if( !this.proj )
+            {
+                console.log( "HERE: " + this.name );
+            }
+            */
 
             if( this.shape )
             {
-                this.shape.render( gl, this.world_matrix, view, proj, wf, diffuse );
+//                shadow.render( gl, this.world_matrix );
+                this.shape.render( 
+                        gl,
+                        this.world_matrix,
+                        view,
+                        proj,
+                        wf,
+                        point_light );
             }
         },
+        /*
+        render_shadows: function( gl, shadow )
+        {
+            if( this.shape )
+                this.shadow = shadow.render( gl, this );
+
+            for( var ii = 0; ii < this.children.length; ii++ )
+                this.children[ii].render_shadows( gl, shadow );
+        },
+        */
         /** Gets a reference to a specific entry in the tree using the name of
          * the desired object.
          * @param id, The name or unique id of the object to be searched for.

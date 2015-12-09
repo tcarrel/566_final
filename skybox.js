@@ -38,9 +38,18 @@ function init_skybox( gl )
 
             gl.useProgram(this.program);
 
-            gl.uniformMatrix4fv(this.svars.u_xform,       false, xform.elements);
-            gl.uniformMatrix4fv(this.svars.u_view,        false,  view.elements);
-            gl.uniformMatrix4fv(this.svars.u_perspective, false,  proj.elements);
+            gl.uniformMatrix4fv(
+                    this.svars.u_xform,
+                    false,
+                    xform.elements );
+            gl.uniformMatrix4fv(
+                    this.svars.u_view,
+                    false,
+                    view.elements );
+            gl.uniformMatrix4fv(
+                    this.svars.u_perspective,
+                    false,
+                    proj.elements );
 
             gl.bindBuffer( gl.ARRAY_BUFFER, this.vertex_buffer );
             gl.vertexAttribPointer( 
@@ -58,7 +67,11 @@ function init_skybox( gl )
                     0, 0 );
 
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.i_buffer );
-            gl.drawElements(gl.TRIANGLES, this.indicies.length, gl.UNSIGNED_BYTE, 0);
+            gl.drawElements(
+                    gl.TRIANGLES,
+                    this.indicies.length,
+                    gl.UNSIGNED_BYTE,
+                    0);
         },
         //Create buffer object
         i_buffer:       gl.createBuffer(),

@@ -14,7 +14,11 @@ function main()
 
     var view_mat = new Matrix4;
     // Always use clientWidth and clientHeight for aspect ratio.
-    view_mat.setPerspective( 30, canvas.clientWidth / canvas.clientHeight, 1, 100 );
+    view_mat.setPerspective(
+            30,
+            canvas.clientWidth / canvas.clientHeight,
+            1,
+            100 );
 
     var gl = getWebGLContext(canvas);
     if( !gl )
